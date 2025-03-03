@@ -29,14 +29,10 @@ public function main() returns error? {
         }
     };
     check wsClient->writeMessage(subscribeMessage);
-    check wsClient->writeMessage(subscribeMessage);
     io:println("Message sent to the server");
 
     anydata res2 = check wsClient->readMessage();
     io:println("Message received from the server: ", res2);
-
-    anydata res3 = check wsClient->readMessage();
-    io:println("Message received from the server: ", res3);
 
     io:println(wsClient.isOpen());
 }

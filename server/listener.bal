@@ -35,7 +35,7 @@ service class WsService {
         return {'type: WS_PONG};
     }
 
-    private isolated function onSubscribe(SubscribeMessage message) returns SubscriberAlreadyExists|Unauthorized? {
+    private isolated function onSubscribe(SubscribeMessage message) returns NextMessage|SubscriberAlreadyExists|Unauthorized {
         // Validate the subscription request
         lock {
             if !self.initiatedConnection {
@@ -47,7 +47,7 @@ service class WsService {
             self.activeConnections[message.id] = message.id;
         }
         io:println("Subscribed by ", message.id);
-        return;
+        return {'type: WS_NEXT, id: message.id, payload: "Next"};
     }
 
 }

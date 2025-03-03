@@ -31,6 +31,12 @@ type SubscribeMessage record {|
     |} payload;
 |};
 
+type NextMessage record {|
+    WS_NEXT 'type;
+    string id;
+    json payload;
+|};
+
 type TooManyInitializationRequests record {|
     *websocket:CustomCloseFrame;
     4429 status = 4429;
@@ -42,6 +48,7 @@ type Unauthorized record {|
     4401 status = 4401;
     string reason = "Unauthorized";
 |};
+
 type SubscriberAlreadyExists record {|
     *websocket:CustomCloseFrame;
     4409 status = 4409;
