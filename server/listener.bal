@@ -1,4 +1,3 @@
-import ballerina/io;
 import ballerina/websocket;
 
 listener websocket:Listener websocketListener = check new (9090);
@@ -11,7 +10,7 @@ service / on websocketListener {
 
 }
 
-service class WsService {
+isolated service class WsService {
     *websocket:Service;
     private boolean initiatedConnection = false;
     private final map<string> activeConnections = {};
@@ -35,8 +34,8 @@ service class WsService {
         return {'type: WS_PONG};
     }
 
-    private isolated function onSubscribe(SubscribeMessage message) 
-    returns NextMessage|SubscriberAlreadyExists|Unauthorized|ErrorMessage {
+    private isolated function onSubscribe(SubscribeMessage message)
+    returns NextMessage|CompleteMessage|SubscriberAlreadyExists|Unauthorized|ErrorMessage? {
         // Validate the subscription request
         lock {
             if !self.initiatedConnection {
@@ -47,8 +46,26 @@ service class WsService {
             }
             self.activeConnections[message.id] = message.id;
         }
-        io:println("Subscribed by ", message.id);
-        return {'type: WS_NEXT, id: message.id, payload: "Next"};
+        // Process the subscription request
+        NextMessage|CompleteMessage response = {'type: WS_NEXT, id: message.id, payload: "Next"};
+
+        // Send the response
+        lock {
+            if !self.activeConnections.hasKey(message.id) {
+                return;
+            }
+            if response is CompleteMessage {
+                _ = self.activeConnections.remove(message.id);
+            }
+        }
+        return response;
     }
 
+    private isolated function onComplete(CompleteMessage message) {
+        lock {
+            if self.activeConnections.hasKey(message.id) {
+                _ = self.activeConnections.remove(message.id);
+            }
+        }
+    }
 }

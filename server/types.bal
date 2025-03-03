@@ -43,6 +43,11 @@ type ErrorMessage record {|
     json payload;
 |};
 
+type CompleteMessage record {|
+    WS_COMPLETE 'type;
+    string id;
+|};
+
 type TooManyInitializationRequests record {|
     *websocket:CustomCloseFrame;
     4429 status = 4429;
