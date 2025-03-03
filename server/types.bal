@@ -1,27 +1,27 @@
 import ballerina/websocket;
 
-type ConnectionInitMessage record {|
-    WS_INIT 'type;
+type ConnectionInit record {|
+    string 'type;
     map<json> payload?;
 |};
 
 type ConnectionAckMessage record {|
-    WS_ACK 'type;
+    string 'type;
     map<json> payload?;
 |};
 
 type PingMessage record {|
-    WS_PING 'type;
+    string 'type;
     map<json> payload?;
 |};
 
 type PongMessage record {|
-    WS_PONG 'type;
+    string 'type;
     map<json> payload?;
 |};
 
-type SubscribeMessage record {|
-    WS_SUBSCRIBE 'type;
+type Subscribe record {|
+    string 'type;
     string id;
     record {|
         string? operationName?;
@@ -32,19 +32,19 @@ type SubscribeMessage record {|
 |};
 
 type NextMessage record {|
-    WS_NEXT 'type;
+    string 'type;
     string id;
     json payload;
 |};
 
 type ErrorMessage record {|
-    WS_ERROR 'type;
+    string 'type;
     string id;
     json payload;
 |};
 
-type CompleteMessage record {|
-    WS_COMPLETE 'type;
+type Complete record {|
+    string 'type;
     string id;
 |};
 

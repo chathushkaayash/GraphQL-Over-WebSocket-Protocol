@@ -1,8 +1,12 @@
+import ballerina/lang.runtime;
 import ballerina/websocket;
 
 listener websocket:Listener websocketListener = check new (9090);
 
-@websocket:ServiceConfig {dispatcherKey: "type"}
+@websocket:ServiceConfig {
+    dispatcherKey: "type",
+    idleTimeout: 5
+}
 service / on websocketListener {
     resource function get .() returns websocket:Service|websocket:UpgradeError {
         return new WsService();
@@ -10,15 +14,14 @@ service / on websocketListener {
 
 }
 
-isolated service class WsService {
+service class WsService {
     *websocket:Service;
     private boolean initiatedConnection = false;
-    private final map<string> activeConnections = {};
+    private final map<SubscriptionHandler> activeConnections = {};
 
     // TODO Forbidden
-    // TODO connectionInitWaitTimeout 
 
-    remote function onConnectionInit(ConnectionInitMessage message) returns ConnectionAckMessage|TooManyInitializationRequests {
+    remote function onConnectionInit(ConnectionInit message) returns ConnectionAckMessage|TooManyInitializationRequests {
         lock {
             if self.initiatedConnection {
                 return TOO_MANY_INITIALIZATION_REQUESTS;
@@ -37,15 +40,16 @@ isolated service class WsService {
     private isolated function onIdleTimeout() returns ConnectionInitTimeout? {
         lock {
             if !self.initiatedConnection {
-                return {status: 4408};
+                return CONNECTION_INIT_TIMEOUT;
             }
         }
         return;
     }
 
-    private isolated function onSubscribe(SubscribeMessage message)
-    returns NextMessage|CompleteMessage|SubscriberAlreadyExists|Unauthorized|ErrorMessage? {
+    private isolated function onSubscribe(websocket:Caller caller, Subscribe message)
+    returns Unauthorized|SubscriberAlreadyExists|websocket:Error? {
         // Validate the subscription request
+        SubscriptionHandler handler = new (message.id);
         lock {
             if !self.initiatedConnection {
                 return UNAUTHORIZED;
@@ -53,28 +57,49 @@ isolated service class WsService {
             if self.activeConnections.hasKey(message.id) {
                 return {status: 4409, reason: string `Subscriber for ${message.id} already exists`};
             }
-            self.activeConnections[message.id] = message.id;
+            self.activeConnections[message.id] = handler;
         }
         // Process the subscription request
-        NextMessage|CompleteMessage response = {'type: WS_NEXT, id: message.id, payload: "Next"};
+        _ = start executeQuery(caller, message.clone(), handler);
+        return;
+    }
+
+    private isolated function onComplete(Complete message) {
+        lock {
+            if self.activeConnections.hasKey(message.id) {
+                SubscriptionHandler handler = self.activeConnections.remove(message.id);
+                handler.setUnsubscribed();
+            }
+        }
+    }
+
+}
+
+isolated function executeQuery(websocket:Caller caller, Subscribe message, SubscriptionHandler handler)
+    returns websocket:Error? {
+
+    runtime:sleep(1);
+    if message.payload.query == "" {
+        return;
+    }
+
+    NextMessage|Complete response;
+    foreach int i in 0 ... 3 {
+        if i != 3 {
+            response = {'type: WS_NEXT, id: message.id, payload: "Next"};
+        } else {
+            response = {'type: WS_COMPLETE, id: message.id};
+        }
 
         // Send the response
         lock {
-            if !self.activeConnections.hasKey(message.id) {
+            if handler.getUnsubscribed() {
                 return;
             }
-            if response is CompleteMessage {
-                _ = self.activeConnections.remove(message.id);
+            if response is Complete {
+                _ = handler.setUnsubscribed();
             }
         }
-        return response;
-    }
-
-    private isolated function onComplete(CompleteMessage message) {
-        lock {
-            if self.activeConnections.hasKey(message.id) {
-                _ = self.activeConnections.remove(message.id);
-            }
-        }
+        check caller->writeMessage(response);
     }
 }
