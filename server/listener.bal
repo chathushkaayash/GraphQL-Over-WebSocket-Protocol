@@ -35,7 +35,8 @@ service class WsService {
         return {'type: WS_PONG};
     }
 
-    private isolated function onSubscribe(SubscribeMessage message) returns NextMessage|SubscriberAlreadyExists|Unauthorized {
+    private isolated function onSubscribe(SubscribeMessage message) 
+    returns NextMessage|SubscriberAlreadyExists|Unauthorized|ErrorMessage {
         // Validate the subscription request
         lock {
             if !self.initiatedConnection {

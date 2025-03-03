@@ -37,6 +37,12 @@ type NextMessage record {|
     json payload;
 |};
 
+type ErrorMessage record {|
+    WS_ERROR 'type;
+    string id;
+    json payload;
+|};
+
 type TooManyInitializationRequests record {|
     *websocket:CustomCloseFrame;
     4429 status = 4429;
