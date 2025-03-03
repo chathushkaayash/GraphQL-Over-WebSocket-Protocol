@@ -34,6 +34,15 @@ isolated service class WsService {
         return {'type: WS_PONG};
     }
 
+    private isolated function onIdleTimeout() returns ConnectionInitTimeout? {
+        lock {
+            if !self.initiatedConnection {
+                return {status: 4408};
+            }
+        }
+        return;
+    }
+
     private isolated function onSubscribe(SubscribeMessage message)
     returns NextMessage|CompleteMessage|SubscriberAlreadyExists|Unauthorized|ErrorMessage? {
         // Validate the subscription request

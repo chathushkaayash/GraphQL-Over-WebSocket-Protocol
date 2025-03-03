@@ -60,6 +60,12 @@ type Unauthorized record {|
     string reason = "Unauthorized";
 |};
 
+type ConnectionInitTimeout record {|
+    *websocket:CustomCloseFrame;
+    4408 status = 4408;
+    string reason = "Connection initialisation timeout";
+|};
+
 type SubscriberAlreadyExists record {|
     *websocket:CustomCloseFrame;
     4409 status = 4409;
@@ -67,3 +73,4 @@ type SubscriberAlreadyExists record {|
 
 public final readonly & TooManyInitializationRequests TOO_MANY_INITIALIZATION_REQUESTS = {};
 public final readonly & Unauthorized UNAUTHORIZED = {};
+public final readonly & ConnectionInitTimeout CONNECTION_INIT_TIMEOUT = {};
