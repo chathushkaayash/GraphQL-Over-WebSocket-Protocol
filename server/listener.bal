@@ -78,7 +78,7 @@ service class WsService {
 isolated function executeQuery(websocket:Caller caller, Subscribe message, SubscriptionHandler handler)
     returns websocket:Error? {
 
-    runtime:sleep(1);
+    runtime:sleep(1); // Simulate a delay
     if message.payload.query == "" {
         return;
     }
@@ -92,13 +92,11 @@ isolated function executeQuery(websocket:Caller caller, Subscribe message, Subsc
         }
 
         // Send the response
-        lock {
-            if handler.getUnsubscribed() {
-                return;
-            }
-            if response is Complete {
-                _ = handler.setUnsubscribed();
-            }
+        if handler.getUnsubscribed() {
+            return;
+        }
+        if response is Complete {
+            _ = handler.setUnsubscribed();
         }
         check caller->writeMessage(response);
     }
