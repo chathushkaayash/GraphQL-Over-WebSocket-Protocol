@@ -5,7 +5,7 @@ public function main() returns error? {
     websocket:Client wsClient = check new ("ws://localhost:9090/");
 
     check wsClient->writeMessage({ 'type: "connection_init"});
-    check wsClient->writeMessage({ 'type: "ping"});
+    check wsClient->writeMessage({ 'type: "connection_init"});
     io:println("Message sent to the server");
 
     anydata res1 = check wsClient->readMessage();
