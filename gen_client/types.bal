@@ -10,6 +10,16 @@ public type ConnectionAckMessage record {
     record {} payload?;
 };
 
+public type PingMessage record {
+    string 'type;
+    record {} payload?;
+};
+
+public type PongMessage record {
+    string 'type;
+    record {} payload?;
+};
+
 public type Subscribe record {
     string 'type;
     string id;

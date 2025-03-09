@@ -31,10 +31,7 @@ service class WsService {
         }
     }
 
-    // If the server receives a actual ping frame or message that's type is ping This function will be called
-    // But if it is a normal message the pong frame will not be sent
-
-    isolated remote function onPing() returns PongMessage {
+    isolated remote function onPingMessage(PingMessage pingMessage) returns PongMessage {
         return {'type: WS_PONG};
     }
 

@@ -110,6 +110,35 @@ public client isolated class GraphqlOverWebsocketClient {
         return connectionAckMessage;
     }
 
+    remote isolated function doPingMessage(PingMessage pingMessage, decimal timeout) returns PongMessage|error {
+        lock {
+            if !self.isActive {
+                return error("ConnectionError: Connection has been closed");
+            }
+        }
+        Message|error message = pingMessage.cloneWithType();
+        if message is error {
+            self.attemptToCloseConnection();
+            return error("DataBindingError: Error in cloning message", message);
+        }
+        pipe:Error? pipeErr = self.writeMessageQueue.produce(message, timeout);
+        if pipeErr is pipe:Error {
+            self.attemptToCloseConnection();
+            return error("PipeError: Error in producing message", pipeErr);
+        }
+        Message|pipe:Error responseMessage = self.pipes.getPipe("pingMessage").consume(timeout);
+        if responseMessage is pipe:Error {
+            self.attemptToCloseConnection();
+            return error("PipeError: Error in consuming message", responseMessage);
+        }
+        PongMessage|error pongMessage = responseMessage.cloneWithType();
+        if pongMessage is error {
+            self.attemptToCloseConnection();
+            return error("DataBindingError: Error in cloning message", pongMessage);
+        }
+        return pongMessage;
+    }
+
     remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns NextMessage|Complete|error {
         lock {
             if !self.isActive {

@@ -19,6 +19,7 @@ channels:
         oneOf:
         - $ref: '#/components/messages/ConnectionAckMessage'
         - $ref: '#/components/messages/TooManyInitializationRequests'
+        - $ref: '#/components/messages/PongMessage'
         - $ref: '#/components/messages/NextMessage'
         - $ref: '#/components/messages/Complete'
         - $ref: '#/components/messages/Unauthorized'
@@ -27,6 +28,7 @@ channels:
       message:
         oneOf:
         - $ref: '#/components/messages/ConnectionInit'
+        - $ref: '#/components/messages/PingMessage'
         - $ref: '#/components/messages/Subscribe'
         - $ref: '#/components/messages/Complete'
 components:
@@ -71,6 +73,27 @@ components:
           type: string
           description: Message to be sent
       description: Representation of a websocket close-frame
+    PingMessage:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: PingMessage
+        payload:
+          type: object
+          additionalProperties: true
+    PongMessage:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
     Subscribe:
       type: object
       required:
@@ -172,6 +195,15 @@ components:
         oneOf:
         - $ref: '#/components/messages/ConnectionAckMessage'
         - $ref: '#/components/messages/TooManyInitializationRequests'
+      x-response-type: simple-rpc
+    PongMessage:
+      payload:
+        $ref: '#/components/schemas/PongMessage'
+    PingMessage:
+      payload:
+        $ref: '#/components/schemas/PingMessage'
+      x-response:
+        $ref: '#/components/messages/PongMessage'
       x-response-type: simple-rpc
     NextMessage:
       payload:
