@@ -1,0 +1,14 @@
+[package]
+org = "ayash"
+name = "GraphQL_Over_WebSocket_Protocol"
+version = "0.1.0"
+distribution = "2201.10.3"
+
+[build-options]
+observabilityIncluded = true
+
+[[dependency]]
+org="ballerina"
+name="websocket"
+version="2.14.0"
+repository="local"
