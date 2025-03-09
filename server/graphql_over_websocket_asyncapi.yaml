@@ -17,10 +17,10 @@ channels:
     subscribe:
       message:
         oneOf:
-        - $ref: '#/components/messages/ConnectionAckMessage'
+        - $ref: '#/components/messages/ConnectionAck'
         - $ref: '#/components/messages/TooManyInitializationRequests'
         - $ref: '#/components/messages/PongMessage'
-        - $ref: '#/components/messages/NextMessage'
+        - $ref: '#/components/messages/Next'
         - $ref: '#/components/messages/Complete'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'
@@ -44,7 +44,7 @@ components:
         payload:
           type: object
           additionalProperties: true
-    ConnectionAckMessage:
+    ConnectionAck:
       type: object
       required:
       - type
@@ -120,7 +120,7 @@ components:
               x-nullable: true
             extensions:
               x-nullable: true
-    NextMessage:
+    Next:
       type: object
       required:
       - type
@@ -182,9 +182,9 @@ components:
           description: Message to be sent
       description: Representation of a websocket close-frame
   messages:
-    ConnectionAckMessage:
+    ConnectionAck:
       payload:
-        $ref: '#/components/schemas/ConnectionAckMessage'
+        $ref: '#/components/schemas/ConnectionAck'
     TooManyInitializationRequests:
       payload:
         $ref: '#/components/schemas/TooManyInitializationRequests'
@@ -193,7 +193,7 @@ components:
         $ref: '#/components/schemas/ConnectionInit'
       x-response:
         oneOf:
-        - $ref: '#/components/messages/ConnectionAckMessage'
+        - $ref: '#/components/messages/ConnectionAck'
         - $ref: '#/components/messages/TooManyInitializationRequests'
       x-response-type: simple-rpc
     PongMessage:
@@ -205,9 +205,9 @@ components:
       x-response:
         $ref: '#/components/messages/PongMessage'
       x-response-type: simple-rpc
-    NextMessage:
+    Next:
       payload:
-        $ref: '#/components/schemas/NextMessage'
+        $ref: '#/components/schemas/Next'
     Complete:
       payload:
         $ref: '#/components/schemas/Complete'
@@ -222,7 +222,7 @@ components:
         $ref: '#/components/schemas/Subscribe'
       x-response:
         oneOf:
-        - $ref: '#/components/messages/NextMessage'
+        - $ref: '#/components/messages/Next'
         - $ref: '#/components/messages/Complete'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'

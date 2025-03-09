@@ -5,7 +5,7 @@ type ConnectionInit record {|
     map<json> payload?;
 |};
 
-type ConnectionAckMessage record {|
+type ConnectionAck record {|
     string 'type;
     map<json> payload?;
 |};
@@ -31,7 +31,7 @@ type Subscribe record {|
     |} payload;
 |};
 
-type NextMessage record {|
+type Next record {|
     string 'type;
     string id;
     json payload;
@@ -79,8 +79,3 @@ type InvalidMessage record {|
 public final readonly & TooManyInitializationRequests TOO_MANY_INITIALIZATION_REQUESTS = {};
 public final readonly & Unauthorized UNAUTHORIZED = {};
 public final readonly & ConnectionInitTimeout CONNECTION_INIT_TIMEOUT = {};
-
-type Error record {|
-    string 'type;
-    map<json> payload?;
-|};

@@ -81,7 +81,7 @@ public client isolated class GraphqlOverWebsocketClient {
         }
     }
 
-    remote isolated function doConnectionInit(ConnectionInit connectionInit, decimal timeout) returns ConnectionAckMessage|error {
+    remote isolated function doConnectionInit(ConnectionInit connectionInit, decimal timeout) returns ConnectionAck|error {
         lock {
             if !self.isActive {
                 return error("ConnectionError: Connection has been closed");
@@ -102,12 +102,12 @@ public client isolated class GraphqlOverWebsocketClient {
             self.attemptToCloseConnection();
             return error("PipeError: Error in consuming message", responseMessage);
         }
-        ConnectionAckMessage|error connectionAckMessage = responseMessage.cloneWithType();
-        if connectionAckMessage is error {
+        ConnectionAck|error connectionAck = responseMessage.cloneWithType();
+        if connectionAck is error {
             self.attemptToCloseConnection();
-            return error("DataBindingError: Error in cloning message", connectionAckMessage);
+            return error("DataBindingError: Error in cloning message", connectionAck);
         }
-        return connectionAckMessage;
+        return connectionAck;
     }
 
     remote isolated function doPingMessage(PingMessage pingMessage, decimal timeout) returns PongMessage|error {
@@ -139,7 +139,7 @@ public client isolated class GraphqlOverWebsocketClient {
         return pongMessage;
     }
 
-    remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns NextMessage|Complete|error {
+    remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns Next|Complete|error {
         lock {
             if !self.isActive {
                 return error("ConnectionError: Connection has been closed");
@@ -160,7 +160,7 @@ public client isolated class GraphqlOverWebsocketClient {
             self.attemptToCloseConnection();
             return error("PipeError: Error in consuming message", responseMessage);
         }
-        NextMessage|Complete|error unionResult = responseMessage.cloneWithType();
+        Next|Complete|error unionResult = responseMessage.cloneWithType();
         if unionResult is error {
             self.attemptToCloseConnection();
             return error("DataBindingError: Error in cloning message", unionResult);

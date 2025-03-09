@@ -21,7 +21,7 @@ service class WsService {
 
     // TODO Forbidden
 
-    isolated remote function onConnectionInit(ConnectionInit message) returns ConnectionAckMessage|TooManyInitializationRequests {
+    isolated remote function onConnectionInit(ConnectionInit message) returns ConnectionAck|TooManyInitializationRequests {
         lock {
             if self.initiatedConnection {
                 return TOO_MANY_INITIALIZATION_REQUESTS;
@@ -45,7 +45,7 @@ service class WsService {
     }
 
     isolated remote function onSubscribe(websocket:Caller caller, Subscribe message)
-    returns NextMessage|Complete|Unauthorized|SubscriberAlreadyExists|websocket:Error? {
+    returns Next|Complete|Unauthorized|SubscriberAlreadyExists|websocket:Error? {
         // Validate the subscription request
         SubscriptionHandler handler = new (message.id);
         lock {
@@ -88,7 +88,7 @@ isolated function executeQuery(websocket:Caller caller, Subscribe message, Subsc
         return;
     }
 
-    NextMessage|Complete response;
+    Next|Complete response;
     foreach int i in 0 ... 3 {
         if i != 3 {
             response = {'type: WS_NEXT, id: message.id, payload: "Next"};

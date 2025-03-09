@@ -5,7 +5,7 @@ public type ConnectionInit record {
     record {} payload?;
 };
 
-public type ConnectionAckMessage record {
+public type ConnectionAck record {
     string 'type;
     record {} payload?;
 };
@@ -26,7 +26,7 @@ public type Subscribe record {
     record {string? operationName?; string query; anydata? variables?; anydata? extensions?;} payload;
 };
 
-public type NextMessage record {
+public type Next record {
     string 'type;
     string id;
     json payload;
