@@ -7,7 +7,7 @@ listener websocket:Listener websocketListener = check new (9090);
     dispatcherKey: "type",
     idleTimeout: 5
 }
-service / on websocketListener {
+service /graphql_over_websocket on websocketListener {
     resource function get .() returns websocket:Service|websocket:UpgradeError {
         return new WsService();
     }
@@ -21,7 +21,7 @@ service class WsService {
 
     // TODO Forbidden
 
-    remote function onConnectionInit(ConnectionInit message) returns ConnectionAckMessage|TooManyInitializationRequests {
+    isolated remote function onConnectionInit(ConnectionInit message) returns ConnectionAckMessage|TooManyInitializationRequests {
         lock {
             if self.initiatedConnection {
                 return TOO_MANY_INITIALIZATION_REQUESTS;
@@ -33,11 +33,12 @@ service class WsService {
 
     // If the server receives a actual ping frame or message that's type is ping This function will be called
     // But if it is a normal message the pong frame will not be sent
-    private isolated function onPing() returns PongMessage {
+
+    isolated remote function onPing() returns PongMessage {
         return {'type: WS_PONG};
     }
 
-    private isolated function onIdleTimeout() returns ConnectionInitTimeout? {
+    isolated remote function onIdleTimeout() returns ConnectionInitTimeout? {
         lock {
             if !self.initiatedConnection {
                 return CONNECTION_INIT_TIMEOUT;
@@ -46,8 +47,8 @@ service class WsService {
         return;
     }
 
-    private isolated function onSubscribe(websocket:Caller caller, Subscribe message)
-    returns Unauthorized|SubscriberAlreadyExists|websocket:Error? {
+    isolated remote function onSubscribe(websocket:Caller caller, Subscribe message)
+    returns NextMessage|Complete|Unauthorized|SubscriberAlreadyExists|websocket:Error? {
         // Validate the subscription request
         SubscriptionHandler handler = new (message.id);
         lock {
@@ -64,13 +65,20 @@ service class WsService {
         return;
     }
 
-    private isolated function onComplete(Complete message) {
+    isolated remote function onComplete(Complete message) {
         lock {
             if self.activeConnections.hasKey(message.id) {
                 SubscriptionHandler handler = self.activeConnections.remove(message.id);
                 handler.setUnsubscribed();
             }
         }
+    }
+
+    isolated remote function onError(error errorMessage) returns InvalidMessage? {
+        if errorMessage.message().endsWith("ConversionError") {
+            return {status: 4400, reason: "Invalid message"};
+        }
+        return;
     }
 
 }

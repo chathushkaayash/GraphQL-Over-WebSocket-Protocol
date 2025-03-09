@@ -1,10 +1,10 @@
 asyncapi: 2.5.0
 info:
-  title: /
+  title: Graphql Over Websocket
   version: 0.1.0
 servers:
   development:
-    url: "{server}:{port}/"
+    url: "{server}:{port}/graphql_over_websocket"
     protocol: ws
     protocolVersion: "13"
     variables:
@@ -19,6 +19,8 @@ channels:
         oneOf:
         - $ref: '#/components/messages/ConnectionAckMessage'
         - $ref: '#/components/messages/TooManyInitializationRequests'
+        - $ref: '#/components/messages/NextMessage'
+        - $ref: '#/components/messages/Complete'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'
     publish:
@@ -59,13 +61,11 @@ components:
       properties:
         frametype:
           type: string
-          enum:
-          - close
+          const: close
           description: WS frame type
         status:
           type: integer
-          enum:
-          - 4429
+          const: 4429
           description: status code
         reason:
           type: string
@@ -97,6 +97,30 @@ components:
               x-nullable: true
             extensions:
               x-nullable: true
+    NextMessage:
+      type: object
+      required:
+      - type
+      - id
+      - payload
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        payload:
+          additionalProperties: true
+    Complete:
+      type: object
+      required:
+      - type
+      - id
+      properties:
+        type:
+          type: string
+          const: Complete
+        id:
+          type: string
     Unauthorized:
       type: object
       required:
@@ -106,13 +130,11 @@ components:
       properties:
         frametype:
           type: string
-          enum:
-          - close
+          const: close
           description: WS frame type
         status:
           type: integer
-          enum:
-          - 4401
+          const: 4401
           description: status code
         reason:
           type: string
@@ -126,29 +148,16 @@ components:
       properties:
         frametype:
           type: string
-          enum:
-          - close
+          const: close
           description: WS frame type
         status:
           type: integer
-          enum:
-          - 4409
+          const: 4409
           description: status code
         reason:
           type: string
           description: Message to be sent
       description: Representation of a websocket close-frame
-    Complete:
-      type: object
-      required:
-      - type
-      - id
-      properties:
-        type:
-          type: string
-          const: Complete
-        id:
-          type: string
   messages:
     ConnectionAckMessage:
       payload:
@@ -164,6 +173,12 @@ components:
         - $ref: '#/components/messages/ConnectionAckMessage'
         - $ref: '#/components/messages/TooManyInitializationRequests'
       x-response-type: simple-rpc
+    NextMessage:
+      payload:
+        $ref: '#/components/schemas/NextMessage'
+    Complete:
+      payload:
+        $ref: '#/components/schemas/Complete'
     Unauthorized:
       payload:
         $ref: '#/components/schemas/Unauthorized'
@@ -175,12 +190,11 @@ components:
         $ref: '#/components/schemas/Subscribe'
       x-response:
         oneOf:
+        - $ref: '#/components/messages/NextMessage'
+        - $ref: '#/components/messages/Complete'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'
       x-response-type: simple-rpc
-    Complete:
-      payload:
-        $ref: '#/components/schemas/Complete'
 x-dispatcherKey: type
 x-ballerina-ws-closeframe:
   type: body

@@ -71,6 +71,16 @@ type SubscriberAlreadyExists record {|
     4409 status = 4409;
 |};
 
+type InvalidMessage record {|
+    *websocket:CustomCloseFrame;
+    4400 status = 4400;
+|};
+
 public final readonly & TooManyInitializationRequests TOO_MANY_INITIALIZATION_REQUESTS = {};
 public final readonly & Unauthorized UNAUTHORIZED = {};
 public final readonly & ConnectionInitTimeout CONNECTION_INIT_TIMEOUT = {};
+
+type Error record {|
+    string 'type;
+    map<json> payload?;
+|};
