@@ -8,6 +8,7 @@ public client isolated class GraphqlOverWebsocketClient {
     private final websocket:Client clientEp;
     private final pipe:Pipe writeMessageQueue;
     private final PipesMap pipes;
+    private final StreamGeneratorsMap streamGenerators;
     private boolean isActive;
     private final readonly & map<string> dispatcherMap = {
         "Complete": "subscribe",
@@ -23,6 +24,7 @@ public client isolated class GraphqlOverWebsocketClient {
     # + return - An error if connector initialization failed 
     public isolated function init(websocket:ClientConfiguration clientConfig =  {}, string serviceUrl = "ws://localhost:9090/graphql_over_websocket") returns error? {
         self.pipes = new ();
+        self.streamGenerators = new ();
         self.writeMessageQueue = new (1000);
         websocket:Client websocketEp = check new (serviceUrl, clientConfig);
         self.clientEp = websocketEp;
@@ -169,7 +171,7 @@ public client isolated class GraphqlOverWebsocketClient {
         return pongMessage;
     }
 
-    remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns Next|Complete|error {
+    remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns stream<Next|Complete,error?>|error {
         lock {
             if !self.isActive {
                 return error("ConnectionError: Connection has been closed");
@@ -185,17 +187,13 @@ public client isolated class GraphqlOverWebsocketClient {
             self.attemptToCloseConnection();
             return error("PipeError: Error in producing message", pipeErr);
         }
-        Message|pipe:Error responseMessage = self.pipes.getPipe("subscribe").consume(timeout);
-        if responseMessage is pipe:Error {
-            self.attemptToCloseConnection();
-            return error("PipeError: Error in consuming message", responseMessage);
+        stream<Next|Complete,error?> streamMessages;
+        lock {
+            NextCompleteStreamGenerator streamGenerator = new (self.pipes, "subscribe", timeout);
+            self.streamGenerators.addStreamGenerator(streamGenerator);
+            streamMessages = new (streamGenerator);
         }
-        Next|Complete|error unionResult = responseMessage.cloneWithType();
-        if unionResult is error {
-            self.attemptToCloseConnection();
-            return error("DataBindingError: Error in cloning message", unionResult);
-        }
-        return unionResult;
+        return streamMessages;
     }
 
     remote isolated function doComplete(Complete complete, decimal timeout) returns error? {
@@ -228,6 +226,7 @@ public client isolated class GraphqlOverWebsocketClient {
             self.isActive = false;
             check self.writeMessageQueue.immediateClose();
             check self.pipes.removePipes();
+            check self.streamGenerators.removeStreamGenerators();
             check self.clientEp->close();
         }
     };

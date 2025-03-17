@@ -1,5 +1,38 @@
 import xlibb/pipe;
 
+# Stream generator class for Next|Complete return type
+public client isolated class NextCompleteStreamGenerator {
+    *Generator;
+    private final PipesMap pipes;
+    private final string pipeId;
+    private final decimal timeout;
+
+    # StreamGenerator
+    #
+    # + pipe - Pipe to hold stream messages 
+    # + timeout - Waiting time 
+    public isolated function init(PipesMap pipes, string pipeId, decimal timeout) {
+        self.pipes = pipes;
+        self.pipeId = pipeId;
+        self.timeout = timeout;
+    }
+
+    public isolated function next() returns record {|Next|Complete value;|}|error {
+        while true {
+            anydata|error? message = self.pipes.getPipe(self.pipeId).consume(self.timeout);
+            if message is error? {
+                continue;
+            }
+            Next|Complete response = check message.cloneWithType();
+            return {value: response};
+        }
+    }
+
+    public isolated function close() returns error? {
+        check self.pipes.removePipe(self.pipeId);
+    }
+}
+
 # PipesMap class to handle generated pipes
 public isolated class PipesMap {
     private final map<pipe:Pipe> pipes;
@@ -41,3 +74,32 @@ public isolated class PipesMap {
         }
     }
 }
+
+# StreamGeneratorsMap class to handle generated stream generators
+public isolated class StreamGeneratorsMap {
+    private final Generator[] streamGenerators;
+
+    public isolated function init() {
+        self.streamGenerators = [];
+    }
+
+    public isolated function addStreamGenerator(Generator streamGenerator) {
+        lock {
+            self.streamGenerators.push(streamGenerator);
+        }
+    }
+
+    public isolated function removeStreamGenerators() returns error? {
+        lock {
+            foreach Generator streamGenerator in self.streamGenerators {
+                check streamGenerator.close();
+            }
+        }
+    }
+}
+
+# Generator object type for type inclusion
+public type Generator isolated object {
+    public isolated function next() returns record {|anydata value;|}|error;
+    public isolated function close() returns error?;
+};

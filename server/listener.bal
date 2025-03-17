@@ -42,7 +42,7 @@ service class WsService {
     }
 
     isolated remote function onSubscribe(websocket:Caller caller, Subscribe message)
-    returns Next|Complete|Unauthorized|SubscriberAlreadyExists|websocket:Error? {
+    returns stream<Next|Complete, error?>|Unauthorized|SubscriberAlreadyExists {
         // Validate the subscription request
         SubscriptionHandler handler = new (message.id);
         lock {
@@ -54,9 +54,7 @@ service class WsService {
             }
             self.activeConnections[message.id] = handler;
         }
-        // Process the subscription request
-        _ = start executeQuery(caller, message.clone(), handler);
-        return;
+        return getResultStream(5);
     }
 
     isolated remote function onComplete(Complete message) {
@@ -77,29 +75,34 @@ service class WsService {
 
 }
 
-isolated function executeQuery(websocket:Caller caller, Subscribe message, SubscriptionHandler handler)
-    returns websocket:Error? {
+isolated class ResultGenerator {
+    private int i = 0;
+    private int n;
 
-    runtime:sleep(1); // Simulate a delay
-    if message.payload.query == "" {
-        return;
+    isolated function init(int n) {
+        self.n = n;
     }
 
-    Next|Complete response;
-    foreach int i in 0 ... 3 {
-        if i != 3 {
-            response = {'type: WS_NEXT, id: message.id, payload: "Next"};
-        } else {
-            response = {'type: WS_COMPLETE, id: message.id};
-        }
+    public isolated function next() returns record {|Next|Complete value;|}|error? {
+        lock {
+            self.i += 1;
+            runtime:sleep(1); // Simulate a delay
 
-        // Send the response
-        if handler.getUnsubscribed() {
-            return;
+            if self.i == self.n + 1 {
+                return;
+            }
+            if self.i == self.n {
+                readonly & Complete complete = {id: self.i.toString()};
+                return {value: complete};
+            }
+            readonly & Next next = {id: self.i.toString(), payload: "Next Payload"};
+            return {value: next};
         }
-        if response is Complete {
-            _ = handler.setUnsubscribed();
-        }
-        check caller->writeMessage(response);
     }
+}
+
+isolated function getResultStream(int n) returns stream<Next|Complete, error?> {
+    ResultGenerator resultGenerator = new (n);
+    stream<Next|Complete, error?> result = new (resultGenerator);
+    return result;
 }

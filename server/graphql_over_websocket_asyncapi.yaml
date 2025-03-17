@@ -256,7 +256,7 @@ components:
         - $ref: '#/components/messages/Complete'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'
-      x-response-type: simple-rpc
+      x-response-type: server-streaming
 x-dispatcherKey: type
 x-ballerina-ws-closeframe:
   type: body
