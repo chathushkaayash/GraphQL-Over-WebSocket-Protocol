@@ -11,15 +11,12 @@ service /graphql_over_websocket on websocketListener {
     resource function get .() returns websocket:Service|websocket:UpgradeError {
         return new WsService();
     }
-
 }
 
 service class WsService {
     *websocket:Service;
     private boolean initiatedConnection = false;
     private final map<SubscriptionHandler> activeConnections = {};
-
-    // TODO Forbidden
 
     isolated remote function onConnectionInit(ConnectionInit message) returns ConnectionAck|TooManyInitializationRequests {
         lock {
