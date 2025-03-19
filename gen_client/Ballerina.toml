@@ -2,7 +2,7 @@
 org = "ayash"
 name = "GraphQL_Over_WebSocket_Protocol"
 version = "0.1.0"
-distribution = "2201.10.3"
+distribution = "2201.11.0"
 
 [build-options]
 observabilityIncluded = true
