@@ -5,6 +5,7 @@ listener websocket:Listener websocketListener = check new (9090);
 
 @websocket:ServiceConfig {
     dispatcherKey: "type",
+    dispatcherStreamId: "id",
     idleTimeout: 5
 }
 service /graphql_over_websocket on websocketListener {

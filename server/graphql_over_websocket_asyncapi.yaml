@@ -258,6 +258,7 @@ components:
         - $ref: '#/components/messages/SubscriberAlreadyExists'
       x-response-type: server-streaming
 x-dispatcherKey: type
+x-dispatcherStreamId: id
 x-ballerina-ws-closeframe:
   type: body
   path: event.frametype

@@ -102,7 +102,13 @@ public client isolated class GraphqlOverWebsocketClient {
                     return;
                 }
                 string requestPipeName = self.getRequestPipeName(message.'type);
-                pipe:Pipe pipe = self.pipes.getPipe(requestPipeName);
+                pipe:Pipe pipe;
+                MessageWithId|error messageWithId = message.cloneWithType(MessageWithId);
+                if messageWithId is MessageWithId {
+                    pipe = self.pipes.getPipe(messageWithId.id);
+                } else {
+                    pipe = self.pipes.getPipe(requestPipeName);
+                }
                 pipe:Error? pipeErr = pipe.produce(message, 5);
                 if pipeErr is pipe:Error {
                     log:printError("PipeError: Failed to produce message to the pipe", pipeErr);
@@ -189,7 +195,7 @@ public client isolated class GraphqlOverWebsocketClient {
         }
         stream<Next|Complete,error?> streamMessages;
         lock {
-            NextCompleteStreamGenerator streamGenerator = new (self.pipes, "subscribe", timeout);
+            NextCompleteStreamGenerator streamGenerator = new (self.pipes, subscribe.id, timeout);
             self.streamGenerators.addStreamGenerator(streamGenerator);
             streamMessages = new (streamGenerator);
         }
