@@ -10,12 +10,12 @@ type ConnectionAck record {|
     map<json> payload?;
 |};
 
-type PingMessage record {|
+type Ping record {|
     string 'type = WS_PING;
     map<json> payload?;
 |};
 
-type PongMessage record {|
+type Pong record {|
     string 'type = WS_PONG;
     map<json> payload?;
 |};

@@ -19,7 +19,7 @@ service class WsService {
     private boolean initiatedConnection = false;
     private final map<SubscriptionHandler> activeConnections = {};
 
-    isolated remote function onConnectionInit(ConnectionInit message) returns ConnectionAck|TooManyInitializationRequests {
+    isolated remote function onConnectionInit(ConnectionInit connectionInit) returns ConnectionAck|TooManyInitializationRequests {
         lock {
             if self.initiatedConnection {
                 return TOO_MANY_INITIALIZATION_REQUESTS;
@@ -29,7 +29,10 @@ service class WsService {
         }
     }
 
-    isolated remote function onPingMessage(PingMessage pingMessage) returns PongMessage {
+    @websocket:DispatcherMapping {
+        value: "ping"
+    }
+    isolated remote function onPingMessage(Ping ping) returns Pong {
         return {'type: WS_PONG};
     }
 
@@ -42,7 +45,7 @@ service class WsService {
         return;
     }
 
-    isolated remote function onSubscribe(websocket:Caller caller, Subscribe message)
+    isolated remote function onSubscribe(Subscribe message)
     returns stream<Next|Complete, error?>|Unauthorized|SubscriberAlreadyExists {
         // Validate the subscription request
         SubscriptionHandler handler = new (message.id);
