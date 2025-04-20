@@ -57,7 +57,7 @@ function testTooManyInitRequests() returns error? {
 function testUnauthorized() returns error? {
     GraphqlOverWebsocketClient wsClient = check new ();
     stream<Next|Complete|ErrorMessage, error?> res =
-        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
+        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: "test"}}, timeout = DEFAULT_TIMEOUT);
     io:println("Response: ");
     printResult(res);
 }
@@ -66,12 +66,12 @@ function testSubscriberAlreadyExists() returns error? {
     GraphqlOverWebsocketClient wsClient = check new ();
     _ = check wsClient->doConnectionInit({'type: "connection_init"}, timeout = DEFAULT_TIMEOUT);
     stream<Next|Complete|ErrorMessage, error?> res1 =
-        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
+        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: "test"}}, timeout = DEFAULT_TIMEOUT);
     io:println("Response 1: ");
     printResult(res1);
 
     stream<Next|Complete|ErrorMessage, error?> res2 =
-        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
+        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: "test"}}, timeout = DEFAULT_TIMEOUT);
     io:println("Response 2: ");
     printResult(res2);
 }
@@ -80,7 +80,7 @@ function testSuccessfulSubscription() returns error? {
     GraphqlOverWebsocketClient wsClient = check new ();
     _ = check wsClient->doConnectionInit({'type: "connection_init"}, timeout = DEFAULT_TIMEOUT);
 
-    Subscribe subscribe = {'type: "subscribe", id: "1", payload: {query: "subscription { mySubscription { id } }"}};
+    Subscribe subscribe = {'type: "subscribe", id: "1", payload: {query: "test"}};
     stream<Next|Complete|ErrorMessage, error?> resultStream =
         check wsClient->doSubscribe(subscribe, timeout = DEFAULT_TIMEOUT);
     io:println("Response: ");
