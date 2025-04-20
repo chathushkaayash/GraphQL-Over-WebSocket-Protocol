@@ -78,10 +78,9 @@ function testSuccessfulSubscription() returns error? {
     _ = check wsClient->doConnectionInit({'type: "connection_init"}, timeout = DEFAULT_TIMEOUT);
 
     Subscribe subscribe = {'type: "subscribe", id: "1", payload: {query: "subscription { mySubscription { id } }"}};
-    stream<Next|Complete, error?> res = check wsClient->doSubscribe(subscribe, timeout = DEFAULT_TIMEOUT);
+    stream<Next|Complete, error?> resultStream = check wsClient->doSubscribe(subscribe, timeout = DEFAULT_TIMEOUT);
     io:println("Response: ");
-    check res.forEach(function(Next|Complete response) {
+    check resultStream.forEach(function(Next|Complete response) {
         io:println(response);
     });
-    io:println("Subscription completed");
 }

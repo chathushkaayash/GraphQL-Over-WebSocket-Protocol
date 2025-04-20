@@ -58,7 +58,7 @@ service class WsService {
             }
             self.activeConnections[message.id] = handler;
         }
-        return getResultStream(5);
+        return getResultStream(message.id, 5);
     }
 
     isolated remote function onComplete(Complete message) {
@@ -82,8 +82,10 @@ service class WsService {
 isolated class ResultGenerator {
     private int i = 0;
     private int n;
+    private string id;
 
-    isolated function init(int n) {
+    isolated function init(string id, int n) {
+        self.id = id;
         self.n = n;
     }
 
@@ -96,17 +98,17 @@ isolated class ResultGenerator {
                 return;
             }
             if self.i == self.n {
-                readonly & Complete complete = {id: self.i.toString()};
+                readonly & Complete complete = {id: self.id};
                 return {value: complete};
             }
-            readonly & Next next = {id: self.i.toString(), payload: "Next Payload"};
+            readonly & Next next = {id: self.id, payload: string `Payload ${self.i}`};
             return {value: next};
         }
     }
 }
 
-isolated function getResultStream(int n) returns stream<Next|Complete, error?> {
-    ResultGenerator resultGenerator = new (n);
+isolated function getResultStream(string id, int n) returns stream<Next|Complete, error?> {
+    ResultGenerator resultGenerator = new (id, n);
     stream<Next|Complete, error?> result = new (resultGenerator);
     return result;
 }
