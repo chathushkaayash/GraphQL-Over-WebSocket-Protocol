@@ -36,22 +36,13 @@ service class WsService {
         return {'type: WS_PONG};
     }
 
-    isolated remote function onIdleTimeout() returns ConnectionInitTimeout? {
-        lock {
-            if !self.initiatedConnection {
-                return CONNECTION_INIT_TIMEOUT;
-            }
-        }
-        return;
-    }
-
     isolated remote function onSubscribe(Subscribe message)
     returns stream<Next|Complete|ErrorMessage, error?>|Unauthorized|SubscriberAlreadyExists {
         // Validate the subscription request
-        SubscriptionHandler handler = new (message.id);
         if message.payload.query == "" {
             return [{'type: WS_ERROR, id: message.id, payload: "Empty query"}].toStream();
         }
+        SubscriptionHandler handler = new (message.id);
         lock {
             if !self.initiatedConnection {
                 return UNAUTHORIZED;
@@ -62,6 +53,15 @@ service class WsService {
             self.activeConnections[message.id] = handler;
         }
         return getResultStream(message.id, 5);
+    }
+
+    isolated remote function onIdleTimeout() returns ConnectionInitTimeout? {
+        lock {
+            if !self.initiatedConnection {
+                return CONNECTION_INIT_TIMEOUT;
+            }
+        }
+        return;
     }
 
     isolated remote function onComplete(Complete message) {
