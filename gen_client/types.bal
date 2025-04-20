@@ -12,12 +12,12 @@ public type ConnectionAck record {
     record {} payload?;
 };
 
-public type PingMessage record {
+public type Ping record {
     string 'type;
     record {} payload?;
 };
 
-public type PongMessage record {
+public type Pong record {
     string 'type;
     record {} payload?;
 };

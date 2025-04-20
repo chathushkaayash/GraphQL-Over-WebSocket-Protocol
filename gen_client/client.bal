@@ -10,11 +10,11 @@ public client isolated class GraphqlOverWebsocketClient {
     private final PipesMap pipes;
     private final StreamGeneratorsMap streamGenerators;
     private boolean isActive;
-    private final readonly & map<string> dispatcherMap = {
+    private final readonly & map<string> responseMap = {
         "Complete": "subscribe",
         "Next": "subscribe",
-        "PongMessage": "pingMessage",
-        "ConnectionAck": "connectionInit"
+        "ConnectionAck": "connectionInit",
+        "Pong": "ping"
     };
 
     # Gets invoked to initialize the `connector`.
@@ -35,12 +35,6 @@ public client isolated class GraphqlOverWebsocketClient {
     }
 
     private isolated function getRecordName(string dispatchingValue) returns string {
-        if dispatchingValue.equalsIgnoreCaseAscii("ping") {
-            return "PingMessage";
-        }
-        if dispatchingValue.equalsIgnoreCaseAscii("pong") {
-            return "PongMessage";
-        }
         string[] words = regexp:split(re `[\W_]+`, dispatchingValue);
         string result = "";
         foreach string word in words {
@@ -48,10 +42,11 @@ public client isolated class GraphqlOverWebsocketClient {
         }
         return result;
     }
-    private isolated function getRequestPipeName(string responseType) returns string {
+
+    private isolated function getPipeName(string responseType) returns string {
         string responseRecordType = self.getRecordName(responseType);
-        if self.dispatcherMap.hasKey(responseRecordType) {
-            return self.dispatcherMap.get(responseRecordType);
+        if self.responseMap.hasKey(responseRecordType) {
+            return self.responseMap.get(responseRecordType);
         }
         return responseType;
     }
@@ -101,13 +96,13 @@ public client isolated class GraphqlOverWebsocketClient {
                     self.attemptToCloseConnection();
                     return;
                 }
-                string requestPipeName = self.getRequestPipeName(message.'type);
                 pipe:Pipe pipe;
                 MessageWithId|error messageWithId = message.cloneWithType(MessageWithId);
                 if messageWithId is MessageWithId {
                     pipe = self.pipes.getPipe(messageWithId.id);
                 } else {
-                    pipe = self.pipes.getPipe(requestPipeName);
+                    string pipeName = self.getPipeName(message.'type);
+                    pipe = self.pipes.getPipe(pipeName);
                 }
                 pipe:Error? pipeErr = pipe.produce(message, 5);
                 if pipeErr is pipe:Error {
@@ -148,13 +143,13 @@ public client isolated class GraphqlOverWebsocketClient {
         return connectionAck;
     }
 
-    remote isolated function doPingMessage(PingMessage pingMessage, decimal timeout) returns PongMessage|error {
+    remote isolated function doPing(Ping ping, decimal timeout) returns Pong|error {
         lock {
             if !self.isActive {
                 return error("ConnectionError: Connection has been closed");
             }
         }
-        Message|error message = pingMessage.cloneWithType();
+        Message|error message = ping.cloneWithType();
         if message is error {
             self.attemptToCloseConnection();
             return error("DataBindingError: Error in cloning message", message);
@@ -164,17 +159,17 @@ public client isolated class GraphqlOverWebsocketClient {
             self.attemptToCloseConnection();
             return error("PipeError: Error in producing message", pipeErr);
         }
-        Message|pipe:Error responseMessage = self.pipes.getPipe("pingMessage").consume(timeout);
+        Message|pipe:Error responseMessage = self.pipes.getPipe("ping").consume(timeout);
         if responseMessage is pipe:Error {
             self.attemptToCloseConnection();
             return error("PipeError: Error in consuming message", responseMessage);
         }
-        PongMessage|error pongMessage = responseMessage.cloneWithType();
-        if pongMessage is error {
+        Pong|error pong = responseMessage.cloneWithType();
+        if pong is error {
             self.attemptToCloseConnection();
-            return error("DataBindingError: Error in cloning message", pongMessage);
+            return error("DataBindingError: Error in cloning message", pong);
         }
-        return pongMessage;
+        return pong;
     }
 
     remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns stream<Next|Complete,error?>|error {
