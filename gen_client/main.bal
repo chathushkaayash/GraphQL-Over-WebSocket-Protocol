@@ -56,7 +56,8 @@ function testTooManyInitRequests() returns error? {
 
 function testUnauthorized() returns error? {
     GraphqlOverWebsocketClient wsClient = check new ();
-    stream<Next|Complete, error?> res = check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
+    stream<Next|Complete|ErrorMessage, error?> res =
+        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
     io:println("Response: ");
     printResult(res);
 }
@@ -64,11 +65,13 @@ function testUnauthorized() returns error? {
 function testSubscriberAlreadyExists() returns error? {
     GraphqlOverWebsocketClient wsClient = check new ();
     _ = check wsClient->doConnectionInit({'type: "connection_init"}, timeout = DEFAULT_TIMEOUT);
-    stream<Next|Complete, error?> res1 = check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
+    stream<Next|Complete|ErrorMessage, error?> res1 =
+        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
     io:println("Response 1: ");
     printResult(res1);
 
-    stream<Next|Complete, error?> res2 = check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
+    stream<Next|Complete|ErrorMessage, error?> res2 =
+        check wsClient->doSubscribe({'type: "subscribe", id: "1", payload: {query: ""}}, timeout = DEFAULT_TIMEOUT);
     io:println("Response 2: ");
     printResult(res2);
 }
@@ -78,23 +81,24 @@ function testSuccessfulSubscription() returns error? {
     _ = check wsClient->doConnectionInit({'type: "connection_init"}, timeout = DEFAULT_TIMEOUT);
 
     Subscribe subscribe = {'type: "subscribe", id: "1", payload: {query: "subscription { mySubscription { id } }"}};
-    stream<Next|Complete, error?> resultStream = check wsClient->doSubscribe(subscribe, timeout = DEFAULT_TIMEOUT);
+    stream<Next|Complete|ErrorMessage, error?> resultStream =
+        check wsClient->doSubscribe(subscribe, timeout = DEFAULT_TIMEOUT);
     io:println("Response: ");
     printResult(resultStream);
 }
 
-function printResult(stream<Next|Complete, error?> resultStream)  {
+function printResult(stream<Next|Complete|ErrorMessage, error?> resultStream) {
     while true {
         var result = resultStream.next();
         if result is error? {
             io:println("Error: " + (result is error ? result.message() : ""));
             break;
         }
-        Next|Complete value = result.value;
-        if value is Next {
-            io:println("Next: " + value.toString());
+        Next|Complete nextVal = result.value;
+        if nextVal is Next {
+            io:println("Next: " + nextVal.toString());
         } else {
-            io:println("Complete: " + value.toString());
+            io:println("Complete: " + nextVal.toString());
             break;
         }
     }

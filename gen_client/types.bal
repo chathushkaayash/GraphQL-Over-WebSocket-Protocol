@@ -38,3 +38,9 @@ public type Complete record {
     string 'type;
     string id;
 };
+
+public type ErrorMessage record {
+    string 'type;
+    string id;
+    json payload;
+};

@@ -46,9 +46,12 @@ service class WsService {
     }
 
     isolated remote function onSubscribe(Subscribe message)
-    returns stream<Next|Complete, error?>|Unauthorized|SubscriberAlreadyExists {
+    returns stream<Next|Complete|ErrorMessage, error?>|Unauthorized|SubscriberAlreadyExists {
         // Validate the subscription request
         SubscriptionHandler handler = new (message.id);
+        if message.payload.query == "" {
+            return [{'type: WS_ERROR, id: message.id, payload: "Empty query"}].toStream();
+        }
         lock {
             if !self.initiatedConnection {
                 return UNAUTHORIZED;
@@ -89,7 +92,7 @@ isolated class ResultGenerator {
         self.n = n;
     }
 
-    public isolated function next() returns record {|Next|Complete value;|}|error? {
+    public isolated function next() returns record {|Next|Complete|ErrorMessage value;|}|error? {
         lock {
             self.i += 1;
             runtime:sleep(1); // Simulate a delay
@@ -107,8 +110,8 @@ isolated class ResultGenerator {
     }
 }
 
-isolated function getResultStream(string id, int n) returns stream<Next|Complete, error?> {
+isolated function getResultStream(string id, int n) returns stream<Next|Complete|ErrorMessage, error?> {
     ResultGenerator resultGenerator = new (id, n);
-    stream<Next|Complete, error?> result = new (resultGenerator);
+    stream<Next|Complete|ErrorMessage, error?> result = new (resultGenerator);
     return result;
 }

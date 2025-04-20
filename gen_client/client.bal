@@ -14,6 +14,7 @@ public client isolated class GraphqlOverWebsocketClient {
         "Complete": "subscribe",
         "Next": "subscribe",
         "ConnectionAck": "connectionInit",
+        "ErrorMessage": "subscribe",
         "Pong": "ping"
     };
 
@@ -172,7 +173,7 @@ public client isolated class GraphqlOverWebsocketClient {
         return pong;
     }
 
-    remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns stream<Next|Complete,error?>|error {
+    remote isolated function doSubscribe(Subscribe subscribe, decimal timeout) returns stream<Next|Complete|ErrorMessage,error?>|error {
         lock {
             if !self.isActive {
                 return error("ConnectionError: Connection has been closed");
@@ -188,9 +189,9 @@ public client isolated class GraphqlOverWebsocketClient {
             self.attemptToCloseConnection();
             return error("PipeError: Error in producing message", pipeErr);
         }
-        stream<Next|Complete,error?> streamMessages;
+        stream<Next|Complete|ErrorMessage,error?> streamMessages;
         lock {
-            NextCompleteStreamGenerator streamGenerator = new (self.pipes, subscribe.id, timeout);
+            NextCompleteErrorMessageStreamGenerator streamGenerator = new (self.pipes, subscribe.id, timeout);
             self.streamGenerators.addStreamGenerator(streamGenerator);
             streamMessages = new (streamGenerator);
         }

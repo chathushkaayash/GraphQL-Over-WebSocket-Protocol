@@ -1,7 +1,7 @@
 import xlibb/pipe;
 
-# Stream generator class for Next|Complete return type
-public client isolated class NextCompleteStreamGenerator {
+# Stream generator class for Next|Complete|ErrorMessage return type
+public client isolated class NextCompleteErrorMessageStreamGenerator {
     *Generator;
     private final PipesMap pipes;
     private final string pipeId;
@@ -17,13 +17,13 @@ public client isolated class NextCompleteStreamGenerator {
         self.timeout = timeout;
     }
 
-    public isolated function next() returns record {|Next|Complete value;|}|error {
+    public isolated function next() returns record {|Next|Complete|ErrorMessage value;|}|error {
         while true {
             anydata|error? message = self.pipes.getPipe(self.pipeId).consume(self.timeout);
             if message is error? {
                 continue;
             }
-            Next|Complete response = check message.cloneWithType();
+            Next|Complete|ErrorMessage response = check message.cloneWithType();
             return {value: response};
         }
     }

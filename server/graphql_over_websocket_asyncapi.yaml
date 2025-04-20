@@ -23,6 +23,7 @@ channels:
         - $ref: '#/components/messages/Pong'
         - $ref: '#/components/messages/Next'
         - $ref: '#/components/messages/Complete'
+        - $ref: '#/components/messages/ErrorMessage'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'
     publish:
@@ -163,6 +164,19 @@ components:
           const: Complete
         id:
           type: string
+    ErrorMessage:
+      type: object
+      required:
+      - type
+      - id
+      - payload
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        payload:
+          additionalProperties: true
     Unauthorized:
       type: object
       required:
@@ -240,6 +254,9 @@ components:
         $ref: '#/components/messages/InvalidMessage'
         x-required: false
       x-response-type: simple-rpc
+    ErrorMessage:
+      payload:
+        $ref: '#/components/schemas/ErrorMessage'
     Unauthorized:
       payload:
         $ref: '#/components/schemas/Unauthorized'
@@ -254,6 +271,7 @@ components:
         - $ref: '#/components/messages/InvalidMessage'
         - $ref: '#/components/messages/Next'
         - $ref: '#/components/messages/Complete'
+        - $ref: '#/components/messages/ErrorMessage'
         - $ref: '#/components/messages/Unauthorized'
         - $ref: '#/components/messages/SubscriberAlreadyExists'
       x-response-type: server-streaming
